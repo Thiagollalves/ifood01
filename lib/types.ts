@@ -1,5 +1,29 @@
 export type Category = 'Pizza' | 'Drink' | 'Dessert';
 
+export interface Address {
+    id: string;
+    label: string; // e.g., "Casa", "Trabalho"
+    street: string;
+    number: string;
+    complement?: string;
+    neighborhood: string;
+    city: string;
+    zipCode: string;
+}
+
+export interface User {
+    id: string;
+    name: string;
+    phone: string;
+    password?: string; // Optional for simulated legacy users or social logic
+    whatsapp: string;
+    age: string;
+    photoUrl?: string; // Base64 or URL
+    email?: string;
+    addresses: Address[];
+    orders: Order[]; // For history
+}
+
 export interface Product {
     id: string;
     name: string;
@@ -34,4 +58,13 @@ export interface Order {
     total: number;
     status: OrderStatus;
     createdAt: number; // timestamp
+}
+
+export interface RestaurantSettings {
+    name: string;
+    phone: string;
+    address: string;
+    deliveryFee: number;
+    deliveryTime: string; // e.g. "40-60 min"
+    isOpen: boolean;
 }

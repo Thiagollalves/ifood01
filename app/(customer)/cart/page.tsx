@@ -1,49 +1,130 @@
 'use client';
+import { useState, useEffect } from 'react';
 import { useStore } from '@/lib/store';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
 import { Trash2, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { Order } from '@/lib/types';
 
 export default function CartPage() {
-    const { cart, removeFromCart, cartTotal, placeOrder } = useStore();
+    const { cart, removeFromCart, cartTotal, placeOrder, settings, user } = useStore();
     const router = useRouter();
 
     const [formData, setFormData] = useState({
-        name: '',
-        phone: '',
-        address: '',
+        name: user?.name || '',
+        phone: user?.phone || '',
+        address: (user?.addresses && user.addresses.length > 0)
+            ? `${user.addresses[0].street}, ${user.addresses[0].number} - ${user.addresses[0].neighborhood}`
+            : '',
         paymentMethod: 'credit_card'
     });
 
     const [loading, setLoading] = useState(false);
 
+    // Auto-fill if user logs in mid-session or has data
+    useEffect(() => {
+        if (user) {
+            setFormData(prev => ({
+                ...prev,
+                name: user.name,
+                phone: user.phone,
+                // Simple logic: pick first address if available and field is empty
+                address: !prev.address && user.addresses.length > 0
+                    ? `${user.addresses[0].street}, ${user.addresses[0].number} - ${user.addresses[0].neighborhood}`
+                    : prev.address
+            }));
+        }
+    }, [user]);
+
+    // Calculate final total
+    const [coupon, setCoupon] = useState('');
+    const [discount, setDiscount] = useState(0);
+
+    const handleApplyCoupon = () => {
+        if (coupon.toUpperCase() === 'PIZZA10') {
+            setDiscount(cartTotal * 0.1);
+            alert('Cupom aplicado com sucesso! (10% OFF)');
+        } else if (coupon.toUpperCase() === 'ENTREGA') {
+            setDiscount(settings.deliveryFee); // Free delivery essentially
+            alert('Cupom de Frete Grátis aplicado!');
+        } else {
+            alert('Cupom inválido');
+            setDiscount(0);
+        }
+    };
+
+    const finalTotal = cartTotal + settings.deliveryFee - discount;
+
     const handleCheckout = (e: React.FormEvent) => {
         e.preventDefault();
+        if (!settings.isOpen) {
+            alert('A loja está fechada no momento.');
+            return;
+        }
+
+        // If user is not logged in, we could force login, but for MVP let's allow "Guest" orders
+        // storing them in local storage history?
+        // Better: Just proceed as guest, but if they are logged in, save to their history.
+
         setLoading(true);
 
-        const newOrder = {
+        const newOrder: Order = {
             id: crypto.randomUUID(),
             customerName: formData.name,
             customerPhone: formData.phone,
             address: formData.address,
             items: [...cart], // clone
-            total: cartTotal,
-            status: 'Received' as const,
+            total: finalTotal,
+            status: 'Received',
             createdAt: Date.now()
+        };
+
+        // Construct WhatsApp Message
+        const itemsList = cart.map(item => {
+            const extras = item.extras?.length ? `\n   + ${item.extras.join(', ')}` : '';
+            const obs = item.observation ? `\n   Obs: ${item.observation}` : '';
+            const flavors = item.additionalFlavors?.map(f => ` / ${f.name}`).join('') || '';
+            return `• ${item.quantity}x ${item.product.name}${flavors}${extras}${obs}`;
+        }).join('\n');
+
+        const message = `*NOVO PEDIDO #${newOrder.id.slice(0, 4)}* 🍕
+    
+*Cliente:* ${formData.name}
+*Telefone:* ${formData.phone}
+*Endereço:* ${formData.address}
+*Pagamento:* ${formData.paymentMethod === 'credit_card' ? 'Cartão de Crédito' :
+                formData.paymentMethod === 'debit_card' ? 'Cartão de Débito' :
+                    formData.paymentMethod === 'pix' ? 'Pix' : 'Dinheiro'
+            }
+
+*ITENS:*
+${itemsList}
+
+*Taxa de Entrega:* ${settings.deliveryFee.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+*TOTAL:* ${finalTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+
+Link do Pedido: ${window.location.origin}/orders`;
+
+        const encodedMessage = encodeURIComponent(message);
+        const whatsappUrl = `https://wa.me/55${settings.phone.replace(/\D/g, '')}?text=${encodedMessage}`;
+
+        // Helper to open link
+        const openWhatsApp = () => {
+            window.open(whatsappUrl, '_blank');
         };
 
         setTimeout(() => {
             placeOrder(newOrder);
             setLoading(false);
+            openWhatsApp(); // Open WhatsApp
             router.push('/orders');
-        }, 1000); // Create a small delay to simulate processing
+        }, 1000);
     };
 
     if (cart.length === 0) {
         return (
-            <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
+            <div className="flex flex-col items-center justify-center py-20 text-center space-y-4 px-4">
                 <Image src="https://illustrations.popsy.co/gray/shopping-bag.svg" width={200} height={200} alt="Empty Cart" />
                 <h2 className="text-xl font-bold text-foreground">Sua sacola está vazia</h2>
                 <p className="text-muted">Adicione itens para fazer seu pedido.</p>
@@ -62,6 +143,12 @@ export default function CartPage() {
                 </Link>
                 <h1 className="text-2xl font-bold text-foreground">Finalizar Pedido</h1>
             </div>
+
+            {!settings.isOpen && (
+                <div className="bg-red-50 text-red-600 p-4 rounded-lg border border-red-100 font-medium text-center">
+                    🔴 A loja está fechada no momento. Você não poderá concluir o pedido.
+                </div>
+            )}
 
             <div className="grid gap-8 md:grid-cols-2">
                 {/* Order Summary */}
@@ -101,14 +188,44 @@ export default function CartPage() {
                         ))}
                     </div>
 
-                    <div className="flex justify-between items-center pt-4 border-t">
-                        <span className="font-bold text-lg">Total</span>
-                        <span className="font-bold text-xl text-primary">
-                            {cartTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                        </span>
-                    </div>
-                </div>
+                    <div className="border-t pt-4 space-y-2">
+                        {/* Coupon Input */}
+                        <div className="flex gap-2">
+                            <input
+                                type="text"
+                                placeholder="Cupom de desconto"
+                                className="flex-1 p-2 border rounded-lg text-sm uppercase"
+                                value={coupon}
+                                onChange={(e) => setCoupon(e.target.value)}
+                            />
+                            <button
+                                type="button"
+                                onClick={handleApplyCoupon}
+                                className="text-primary font-bold text-sm px-3 hover:bg-red-50 rounded-lg"
+                            >
+                                Aplicar
+                            </button>
+                        </div>
 
+                        <div className="flex justify-between text-muted">
+                            <span>Subtotal</span>
+                            <span>{cartTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
+                        </div>
+                        <div className="flex justify-between text-muted">
+                            <span>Taxa de entrega</span>
+                            <span>{settings.deliveryFee.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
+                        </div>
+                        {discount > 0 && (
+                            <div className="flex justify-between text-green-600 font-medium">
+                                <span>Desconto</span>
+                                <span>- {discount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
+                            </div>
+                        )}
+                        <div className="flex justify-between font-bold text-lg text-foreground pt-2 border-t border-border">
+                            <span>Total</span>
+                            <span>{finalTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
+                        </div>
+                    </div>        </div>
                 {/* Checkout Form */}
                 <form onSubmit={handleCheckout} className="space-y-6 bg-card p-6 rounded-xl shadow-sm border border-border h-fit">
                     <h2 className="font-semibold text-lg">Entrega e Pagamento</h2>
@@ -164,10 +281,10 @@ export default function CartPage() {
 
                     <button
                         type="submit"
-                        disabled={loading}
+                        disabled={loading || !settings.isOpen}
                         className="w-full btn btn-primary mt-6 disabled:opacity-70 disabled:cursor-not-allowed"
                     >
-                        {loading ? 'Enviando...' : 'Confirmar Pedido'}
+                        {loading ? 'Enviando...' : settings.isOpen ? 'Confirmar Pedido' : 'Loja Fechada'}
                     </button>
                 </form>
             </div>

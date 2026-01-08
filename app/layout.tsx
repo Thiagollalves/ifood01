@@ -9,6 +9,11 @@ const inter = Inter({ subsets: ['latin'] });
 export const metadata: Metadata = {
   title: 'Pizza Delivery',
   description: 'A melhor pizza da cidade',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'PizzaApp',
+  },
 };
 
 export default function RootLayout({

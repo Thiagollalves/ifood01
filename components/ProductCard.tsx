@@ -18,9 +18,13 @@ export function ProductCard({ product, onClick }: ProductCardProps) {
                     src={product.image}
                     alt={product.name}
                     fill
-                    className="object-cover"
+                    className="object-cover transition-transform duration-300 group-hover:scale-110"
                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                 />
+                <div className="absolute bottom-2 left-2 bg-white/90 backdrop-blur-sm px-2 py-0.5 rounded-md flex items-center gap-1 shadow-sm">
+                    <span className="text-[10px] font-bold">4.8</span>
+                    <span className="text-amber-400 text-[10px]">★</span>
+                </div>
             </div>
             <div className="flex flex-1 flex-col justify-between">
                 <div>
