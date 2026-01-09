@@ -20,7 +20,7 @@ export function CategoryBubbles({ categories, activeCategory, onSelect }: Catego
                     className="flex flex-col items-center gap-2 min-w-[80px] group"
                 >
                     <div className={cn(
-                        "w-20 h-20 rounded-full relative overflow-hidden transition-all border-2",
+                        "w-16 h-16 md:w-20 md:h-20 rounded-full relative overflow-hidden transition-all border-2",
                         activeCategory === cat.id
                             ? "border-primary ring-2 ring-primary/20 scale-105"
                             : "border-transparent bg-secondary group-hover:bg-secondary/80"
@@ -35,7 +35,7 @@ export function CategoryBubbles({ categories, activeCategory, onSelect }: Catego
                         )}
                     </div>
                     <span className={cn(
-                        "text-sm font-medium transition-colors",
+                        "text-xs md:text-sm font-medium transition-colors",
                         activeCategory === cat.id ? "text-primary" : "text-muted-foreground"
                     )}>
                         {cat.label}

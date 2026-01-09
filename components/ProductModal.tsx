@@ -135,7 +135,13 @@ export function ProductModal({ product, isOpen, onClose }: ProductModalProps) {
                                 <h3 className="font-semibold text-foreground">Tamanho</h3>
                                 <div className="space-y-2">
                                     {SIZES.map((s) => (
-                                        <label key={s.id} className="flex items-center justification-between p-3 border rounded-lg cursor-pointer hover:bg-secondary transition-colors has-[:checked]:border-primary has-[:checked]:bg-red-50">
+                                        <label
+                                            key={s.id}
+                                            className={cn(
+                                                "flex items-center justify-between p-3 border rounded-lg cursor-pointer hover:bg-secondary transition-colors",
+                                                size === s.id && "border-primary bg-red-50"
+                                            )}
+                                        >
                                             <div className="flex items-center gap-3">
                                                 <input
                                                     type="radio"
@@ -176,7 +182,13 @@ export function ProductModal({ product, isOpen, onClose }: ProductModalProps) {
                                 <h3 className="font-semibold text-foreground">Adicionais</h3>
                                 <div className="space-y-2">
                                     {EXTRAS.map((extra) => (
-                                        <label key={extra.id} className="flex items-center justify-between p-3 border rounded-lg cursor-pointer hover:bg-secondary transition-colors has-[:checked]:border-primary">
+                                        <label
+                                            key={extra.id}
+                                            className={cn(
+                                                "flex items-center justify-between p-3 border rounded-lg cursor-pointer hover:bg-secondary transition-colors",
+                                                selectedExtras.includes(extra.id) && "border-primary bg-secondary/50"
+                                            )}
+                                        >
                                             <div className="flex items-center gap-3">
                                                 <div className={cn(
                                                     "flex h-5 w-5 items-center justify-center rounded border transition-colors",

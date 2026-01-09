@@ -11,7 +11,7 @@ export function ProductCard({ product, onClick }: ProductCardProps) {
     return (
         <div
             onClick={onClick}
-            className="flex cursor-pointer gap-4 rounded-lg bg-card p-4 shadow-sm transition-all hover:shadow-md border border-transparent hover:border-border"
+            className="group flex cursor-pointer gap-4 rounded-lg bg-card p-4 shadow-sm transition-all hover:shadow-md border border-transparent hover:border-border"
         >
             <div className="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded-md bg-muted">
                 <Image
