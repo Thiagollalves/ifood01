@@ -15,7 +15,7 @@ export function Header() {
     if (pathname === '/login') return null;
 
     return (
-        <header className="fixed top-0 left-0 right-0 bg-white border-b border-border h-16 z-50 px-4 flex items-center justify-between shadow-sm">
+        <header className="fixed top-0 left-0 right-0 bg-white/90 backdrop-blur-sm border-b border-border h-16 z-50 px-4 flex items-center justify-between shadow-sm">
             <Link href="/" className="font-bold text-xl text-primary">
                 Pizza Delivery
             </Link>
